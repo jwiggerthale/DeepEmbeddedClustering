@@ -63,7 +63,7 @@ Get image paths
 Split image paths in training- test- and validation paths
 Image paths are basis for class ImageDatset which loads images in batches
 '''
-with open('/workspace/image_recognition_apis/im_paths.csv', 'r') as f:
+with open('ListOfImages.csv', 'r') as f:
     reader = csv.reader(f)
     data = list(reader)  
 im_paths  = np.array(data).reshape(len(data[0]))     
@@ -190,15 +190,15 @@ def pretrain(autoencoder: nn.Module,
         val_losses.append(val_loss)
         print('Epoch: {}/{}.. '.format(epoch+1, num_epochs),
             'training_loss: {:.3f}..'.format(train_loss))
-        f = open('/workspace/image_recognition_apis/DEC/original_results/results.txt', 'a')
+        f = open('PathToResults/Results.txt', 'a')
         now = datetime.datetime.now().strftime('%H_%M_%S')
         f.write(f'\n\n\n\nPretraining: \nEpoch: {epoch}/{num_epochs} \ntime: {now}. \ntraining_loss: {running_loss}. \nvalidation_loss: {val_loss}.')    
-        file_name = f'/workspace/image_recognition_apis/DEC/original_results/Autoencoder_DEC_pretraining_epoch_{epoch}_loss_{int(val_loss*1000)}_at_{now}.pth'
+        file_name = f'PathToModels/Autoencoder_DEC_pretraining_epoch_{epoch}_loss_{int(val_loss*1000)}_at_{now}.pth'
         torch.save(autoencoder.state_dict(), file_name)
         bn, rec =  autoencoder.forward(next(iter(test_loader)).to(device))
-        name = f'/workspace/image_recognition_apis/DEC/original_results/Rec_pretraining_epoch_{epoch}_at_{now}.csv'
+        name = f'PathToResults/Rec_pretraining_epoch_{epoch}_at_{now}.csv'
         rec.cpu().detach().numpy().tofile(name,  sep = ',')
-        name = f'/workspace/image_recognition_apis/DEC/original_results/BN_pretraining_epoch_{epoch}_at_{now}.csv'
+        name = f'PathToResults/BN_pretraining_epoch_{epoch}_at_{now}.csv'
         bn.cpu().detach().numpy().tofile(name, sep = ',')
         if(loss<best_loss):
             best_loss = loss
@@ -209,9 +209,8 @@ def pretrain(autoencoder: nn.Module,
             break  
         running_loss = 0
         autoencoder.train()
-      np.array(val_losses).tofile(f'Validation_lossses_pretraining.csv', sep = ',')
-      np.array(losses).tofile(f'Training_lossses_pretraining.csv', sep = ',')
-      #autoencoder.load_state_dict(torch.load(best_model, map_location = device))
+      np.array(val_losses).tofile(f'PathToResults/Validation_lossses_pretraining.csv', sep = ',')
+      np.array(losses).tofile(f'PathToResults/Training_lossses_pretraining.csv', sep = ',')
       print(f'Pretraining finished: Best model: {best_model}')
       return(best_model)
   
@@ -282,7 +281,7 @@ def train(
         features.append(model.encoder(ims)[0].detach().cpu())
     #1b) Fit kmeans to predictions
     kmeans.fit(torch.cat(features).numpy())
-    np.array(kmeans.centroids).tofile('/workspace/image_recognition_apis/DEC/original_results/Centroids.csv', sep= ',')
+    np.array(kmeans.centroids).tofile('PathToResults/Centroids.csv', sep= ',')
     #1c) Get predicted cluster from kmeans
     clusters = kmeans.get_cluster(torch.cat(features).numpy())
     last_clusters = torch.tensor(np.copy(clusters), dtype=torch.long)
@@ -312,10 +311,10 @@ def train(
             loss.backward()
             optimizer.step(closure=None)
         running_loss /= len(train_loader)
-        f = open('/workspace/image_recognition_apis/DEC/original_results/results.txt', 'a')
+        f = open('PathToResults/results.txt', 'a')
         now = datetime.datetime.now().strftime('%H_%M_%S')
         f.write(f'\n\n\n\nTraining: \nEpoch: {epoch}/{epochs} \ntime: {now}. \ntraining_loss: {running_loss}.')    
-        name = f'/workspace/image_recognition_apis/DEC/original_results/Model_DEC_epoch_{epoch}_loss_{int(running_loss*1000)}_at_{now}.pth'
+        name = f'PathToModels/Model_DEC_epoch_{epoch}_loss_{int(running_loss*1000)}_at_{now}.pth'
         torch.save(model.state_dict(), name)
         clusters = predict(model,
                            device = device)
@@ -337,8 +336,11 @@ def train(
              best_loss = running_loss
         ims = next(iter(test_loader))
         out = model.forward(ims.to(device))
-        ims.cpu().detach().numpy().tofile(f'/workspace/image_recognition_apis/DEC/original_results/ims_epoch_{epoch}.csv', sep = ',')
-        out.cpu().detach().numpy().tofile(f'/workspace/image_recognition_apis/DEC/original_results/out_epoch_{epoch}.csv', sep = ',')
+        ims.cpu().detach().numpy().tofile(f'PathToResults/ims_epoch_{epoch}.csv', sep = ',')
+        out.cpu().detach().numpy().tofile(f'PathToResults/out_epoch_{epoch}.csv', sep = ',')
+        bn = model.encoder.forward(ims.to(device))[0]
+        bn.cpu().detach().numpy().tofile(f'PathToResults/bn_epoch_{epoch}.csv', sep = ',')
+        
         
 
         
@@ -379,8 +381,8 @@ out = autoencoder.forward(next(iter(test_loader)).to(device))
 print(out)
 bn = out[0]
 im = out[1]
-bn.cpu().detach().numpy().tofile('/workspace/image_recognition_apis/DEC/original_results/bn_autoencoder_10_features_pretraining.csv', sep = ',')
-im.cpu().detach().numpy().tofile('/workspace/image_recognition_apis/DEC/original_results/im_autoencoder_10_features_pretraining.csv', sep = ',')
+bn.cpu().detach().numpy().tofile('PathToResults/bn_autoencoder_10_features_pretraining.csv', sep = ',')
+im.cpu().detach().numpy().tofile('PathToResults/im_autoencoder_10_features_pretraining.csv', sep = ',')
 
 #Here begins DEC train
 print("DEC stage.")

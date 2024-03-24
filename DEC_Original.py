@@ -1,5 +1,5 @@
 '''
-Script trains a DEC model
+Script trains a DEC model according to 	arXiv:1511.06335 
 In script, 
     data is loaded and preprocessed
     model parameters are defined
@@ -113,7 +113,8 @@ Funtion returns tensor which contains most liekly cluster for evey image from ta
 Pass: 
     Model: DEC model, instance of torch.nn.module
     Device: String, specifies on whioch device to work
-
+Returns: 
+    Most likely cluster for any datapoint
 '''
 def predict(model: nn.Module, 
             device: str = 'cpu'):
@@ -365,8 +366,11 @@ Call functions accordingly
 '''
 
 device = 'cuda:0'
-
-#Training of autoencoder
+'''
+Training of autoencoder
+Here, convolutional autoencoder following VGG16 architecture is used
+You can vary the number of features in the bottleneck of the autoencoder
+'''
 autoencoder = AE_VGG.Autoencoder(num_features = 10).to(device)
 print("Pretraining stage.")
 best_model = pretrain(autoencoder, 
